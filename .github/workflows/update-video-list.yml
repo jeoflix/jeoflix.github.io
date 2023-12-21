@@ -1,0 +1,30 @@
+name: Update Video List
+
+on:
+  push:
+    branches:
+      - main # Adjust as per your default branch
+  schedule:
+    - cron: '0 0 * * *' # Runs daily, adjust as needed
+
+jobs:
+  update_videos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: List videos
+        run: |
+          echo "const videoFiles = [" > videos.js
+          find ./videos -type f -name "*.mp4" -exec echo "  'videos/{}'," >> videos.js \;
+          echo "];" >> videos.js
+
+      - name: Commit video list changes
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add videos.js
+          git diff-index --quiet HEAD || git commit -m "Update video list [skip ci]"
+          git push
