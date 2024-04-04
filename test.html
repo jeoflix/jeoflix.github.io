@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TikTok-like Video Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #000000;
+      margin: 0;
+      padding: 0;
+    }
+    #video-container {
+      margin: 20px auto;
+      width: 100%; /* Full width */
+      max-width: 400px; /* Set maximum width for better responsiveness */
+      height: calc(400px * 16 / 9); /* 9:16 aspect ratio */
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #000000;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease-in-out; /* Adding transition effect */
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>TikTok-like Video Player</h1>
+  <div id="video-container">
+    <video id="video-player" autoplay controls></video>
+  </div>
+  <script>
+    const ACCESS_TOKEN = 'sl.ByoVQgiS8W1lP8-xkU4IQ4kSTY5mDBJ1n7ddtr6hKzB7eF1j083j0eLpA8wnLgKhNc9k65faqLNbZHbDZBunVf8RIPjktjKoWPsCHO6GkPoNhTFTEqskx-E0vOWJ7leGQ0zFm76bnPcJv2GhKfxdFcM';
+
+    // Fetch MP4 files from Dropbox
+    async function fetchMP4Files() {
+      try {
+        const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${ACCESS_TOKEN}`
+          },
+          body: JSON.stringify({
+            path: '', // Path to your Dropbox folder
+            recursive: true,
+            include_media_info: false,
+            include_deleted: false,
+            include_has_explicit_shared_members: false,
+            include_mounted_folders: true,
+            include_non_downloadable_files: false
+          })
+        });
+
+        const data = await response.json();
+
+        const mp4Files = data.entries.filter(entry => entry['.tag'] === 'file' && entry.name.endsWith('.mp4'));
+        return mp4Files.map(file => file.path_lower);
+      } catch (error) {
+        console.error('Error fetching MP4 files from Dropbox:', error);
+        return [];
+      }
+    }
+
+    // Play a random MP4 video
+    async function playRandomMP4Video() {
+      const videoFiles = await fetchMP4Files();
+
+      if (videoFiles.length === 0) {
+        console.error('No MP4 files found in Dropbox.');
+        return;
+      }
+
+      const randomVideoPath = videoFiles[Math.floor(Math.random() * videoFiles.length)];
+      const videoPlayer = document.getElementById('video-player');
+      
+      videoPlayer.src = `https://content.dropboxapi.com/2/files/download?authorization=Bearer ${ACCESS_TOKEN}&path=${encodeURIComponent(randomVideoPath)}`;
+      videoPlayer.play();
+    }
+
+    // Event listener for space bar key press
+    document.addEventListener('keydown', function(event) {
+      if (event.code === 'Space') {
+        playRandomMP4Video();
+      }
+    });
+  </script>
+</body>
+</html>
